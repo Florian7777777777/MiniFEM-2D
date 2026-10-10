@@ -2,46 +2,56 @@
 
 **A Python-based 2D Finite Element Solver for Linear Elasticity**
 
-MiniFEM-2D is an educational finite element solver developed using Python, NumPy, and SciPy. It implements the fundamental computational procedures of the finite element method (FEM), including triangular element formulation, global stiffness matrix assembly, boundary condition enforcement, displacement calculation, stress recovery, and numerical verification.
+MiniFEM-2D is an educational finite element solver implemented in Python using NumPy and SciPy. It demonstrates the core numerical algorithms of the Finite Element Method (FEM), including element stiffness calculation, global sparse matrix assembly, boundary condition enforcement, displacement calculation, stress recovery, and numerical verification.
 
-The project demonstrates the implementation of core numerical algorithms commonly used in Computer-Aided Engineering (CAE) software.
+The project focuses on the mathematical and computational foundations of Computer-Aided Engineering (CAE) solvers.
 
 ## Key Features
 
-- **Mesh Generation:** Structured two-dimensional triangular meshes
+- **Mesh Generation:** Structured 2D triangular meshes
 - **Finite Element Formulation:** Three-node Constant Strain Triangle (CST) elements
 - **Material Model:** Isotropic linear elasticity under plane stress
-- **Matrix Assembly:** Sparse global stiffness matrix construction
+- **Matrix Assembly:** Global sparse stiffness matrix construction
 - **Linear Solver:** Sparse direct solution using SciPy
-- **Boundary Conditions:** Fixed displacement constraints and external loads
-- **Post-processing:** Displacement visualization and Von Mises stress contours
-- **Numerical Verification:** Force equilibrium, residual checks, and mesh convergence analysis
+- **Boundary Conditions:** Fixed displacement constraints and external loading
+- **Post-processing:** Deformed mesh visualization and Von Mises stress contours
+- **Numerical Verification:** Force equilibrium, linear system residual checks, and mesh convergence analysis
 
 ## Mathematical Formulation
 
 The governing equation for static equilibrium is:
 
-\[
+$$
 \nabla \cdot \boldsymbol{\sigma}+\mathbf{f}=0
-\]
+$$
 
 The finite element system is expressed as:
 
-\[
+$$
 \mathbf{K}\mathbf{u}=\mathbf{F}
-\]
+$$
 
-The element stiffness matrix is computed using:
+For a three-node CST element, the stiffness matrix is computed using:
 
-\[
-\mathbf{K}_e=tA\mathbf{B}^T\mathbf{D}\mathbf{B}
-\]
+$$
+\mathbf{K}_e=tA\mathbf{B}^{T}\mathbf{D}\mathbf{B}
+$$
 
-where \(t\) is the thickness, \(A\) is the element area, \(\mathbf{B}\) is the strain-displacement matrix, and \(\mathbf{D}\) is the constitutive matrix.
+where:
+
+- $t$: Element thickness
+- $A$: Triangle area
+- $\mathbf{B}$: Strain-displacement matrix
+- $\mathbf{D}$: Elastic constitutive matrix
+- $\mathbf{K}_e$: Element stiffness matrix
+
+The solver explicitly constructs the element stiffness matrices and assembles the global sparse system.
 
 ## Numerical Example: Cantilever Beam
 
-A two-dimensional cantilever beam is modeled with the following parameters:
+A two-dimensional cantilever beam is analyzed under static loading.
+
+### Model Parameters
 
 | Parameter | Value |
 |---|---|
@@ -52,21 +62,59 @@ A two-dimensional cantilever beam is modeled with the following parameters:
 | Poisson's ratio | 0.30 |
 | Applied vertical load | 1000 N |
 | Element type | CST triangular element |
+| Material behavior | Linear elastic |
+| Analysis type | Plane stress |
 
-### Point-Load Example
+### 1. Von Mises Stress Distribution
 
-For the initial mesh with 288 triangular elements and a concentrated nodal load:
+The following figure shows the computed Von Mises stress distribution for a cantilever beam subjected to a concentrated downward nodal force.
 
-- Tip vertical displacement: **−0.219477 mm**
-- Maximum element Von Mises stress: **13.31 MPa**
-- Vertical support reaction: **1000 N**
-- Relative linear system residual: **1.521 × 10⁻¹²**
+![Von Mises Stress Distribution](von_mises_stress.png)
 
-These results demonstrate equilibrium satisfaction and successful solution of the discretized linear system.
+The stress field is recovered from the element displacement vector:
 
-### Mesh Convergence Study
+$$
+\boldsymbol{\varepsilon}=\mathbf{B}\mathbf{u}_e
+$$
 
-A separate load case applies an equivalent total downward force of 1000 N, uniformly distributed along the right boundary.
+$$
+\boldsymbol{\sigma}=\mathbf{D}\boldsymbol{\varepsilon}
+$$
+
+For plane stress, the Von Mises equivalent stress is calculated as:
+
+$$
+\sigma_{vm}=\sqrt{\sigma_x^2-\sigma_x\sigma_y+\sigma_y^2+3\tau_{xy}^2}
+$$
+
+### 2. Point-Load Simulation Results
+
+For the initial mesh containing 288 triangular elements:
+
+| Quantity | Computed Result |
+|---|---:|
+| Tip vertical displacement | −0.219477 mm |
+| Maximum element Von Mises stress | 13.31 MPa |
+| Vertical support reaction | 1000 N |
+| Relative linear system residual | 1.521 × 10⁻¹² |
+
+The equilibrium verification confirms that the total vertical support reaction balances the externally applied load.
+
+The small linear system residual demonstrates accurate numerical solution of the discretized equilibrium equations.
+
+The reported maximum stress corresponds to the initial finite element mesh and should not be interpreted as a mesh-converged peak stress.
+
+### 3. Mesh Convergence Study
+
+To assess the numerical behavior of the finite element solver, a mesh refinement study is performed.
+
+For this separate load case, a total downward force of 1000 N is uniformly distributed along the right boundary.
+
+The triangular mesh is progressively refined while maintaining the same physical model and material properties.
+
+![Mesh Convergence Analysis](mesh_convergence.png)
+
+### Convergence Results
 
 | Triangular Elements | Vertical Displacement (mm) |
 |---:|---:|
@@ -76,9 +124,19 @@ A separate load case applies an equivalent total downward force of 1000 N, unifo
 | 4,608 | 0.242693 |
 | 10,368 | 0.243699 |
 
-The displacement approaches a stable value as the mesh is refined.
+The calculated displacement increases and gradually stabilizes as the mesh is refined.
 
-The finest-mesh result differs from the Timoshenko beam approximation (0.245524 mm) by approximately 0.74%. This comparison is informative but is not an exact error estimate for the two-dimensional elasticity problem.
+For comparison:
+
+- **Euler–Bernoulli beam approximation:** 0.238095 mm
+- **Timoshenko beam approximation:** 0.245524 mm
+- **Finest-mesh MiniFEM result:** 0.243699 mm
+
+The finest-mesh result differs from the Timoshenko beam approximation by approximately **0.74%**.
+
+This comparison provides a useful consistency check, but the beam theory result is not an exact solution of the two-dimensional elasticity problem.
+
+The observed convergence behavior illustrates the importance of mesh refinement when assessing numerical accuracy.
 
 ## Technologies
 
@@ -86,29 +144,60 @@ The finest-mesh result differs from the Timoshenko beam approximation (0.245524 
 - NumPy
 - SciPy
 - Matplotlib
-- Google Colab / Jupyter Notebook
+- Google Colab
+- Jupyter Notebook
 
 ## How to Run
 
 1. Download `MiniFEM_2D_Elasticity.ipynb` from this repository.
-2. Open the notebook in Google Colab or Jupyter.
-3. Run the cells sequentially from top to bottom.
-4. Inspect the mesh, displacement results, stress contours, and convergence study.
-
-The implementation uses NumPy and SciPy for numerical operations but constructs finite element stiffness matrices and assembles the global system explicitly.
+2. Open the notebook using Google Colab or a local Jupyter environment.
+3. Ensure that NumPy, SciPy, and Matplotlib are available.
+4. Execute the notebook cells sequentially.
+5. Inspect the generated finite element mesh, displacement results, stress distributions, and mesh convergence analysis.
 
 ## Current Limitations
 
-MiniFEM-2D is an educational prototype, not a production-grade CAE solver.
+MiniFEM-2D is an educational research and learning prototype, not a production-grade commercial CAE solver.
 
-The current implementation supports small-deformation, isotropic linear elasticity in plane stress. Material nonlinearity, geometric nonlinearity, contact mechanics, and advanced element formulations have not yet been implemented.
+The current implementation supports:
 
-Further verification against analytical benchmarks and established FE software would strengthen its reliability.
+- Small-deformation linear elasticity
+- Isotropic elastic materials
+- Two-dimensional plane stress analysis
+- Three-node triangular elements
+- Static structural analysis
+
+The following capabilities are not yet implemented:
+
+- Material nonlinearity
+- Geometric nonlinearity
+- Contact mechanics
+- Advanced finite element formulations
+- Parallel numerical computation
+
+Further validation against established benchmark solutions and commercial finite element software would strengthen the solver's reliability.
 
 ## Future Development
 
-Potential improvements include elastoplastic material models, Newton–Raphson nonlinear solution algorithms, additional element formulations, and performance benchmarking.
+Potential extensions include:
 
-## Project File
+- J2 elastoplastic constitutive models
+- Newton–Raphson nonlinear solution algorithms
+- Additional finite element formulations
+- Sparse solver performance benchmarking
+- Comparison with Abaqus and Ansys results
 
-[View the MiniFEM Jupyter Notebook](MiniFEM_2D_Elasticity.ipynb)
+## Project Files
+
+**Source Code:**
+
+[MiniFEM_2D_Elasticity.ipynb](MiniFEM_2D_Elasticity.ipynb)
+
+**Simulation Results:**
+
+- [Von Mises Stress Contour](von_mises_stress.png)
+- [Mesh Convergence Analysis](mesh_convergence.png)
+
+---
+
+**MiniFEM-2D — Exploring the numerical foundations of finite element solvers and computational mechanics.**
